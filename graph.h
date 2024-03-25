@@ -1,5 +1,11 @@
 #pragma once
+#include "main.h"
+#include <QApplication>
 #include <QtWidgets>
+#include <QPainter>
+#include <QRect>
+#include <QColor>
+#include <QFont>
 #include <cmath>
 
 class PlotWidget : public QWidget
@@ -7,9 +13,10 @@ class PlotWidget : public QWidget
 public:
     PlotWidget(QWidget *parent = nullptr) : QWidget(parent) {}
 
-    void setFunction(double (*func)(double, int), int k, double a, double b)
+    void setFunction(double (*func)(double, int), double (*fdd)(double, int), int k, double a, double b)
     {
         this->function = func;
+		this->fdd = fdd;
 		this->mode = k;
         this->lowerBound = a;
         this->upperBound = b;
@@ -26,75 +33,142 @@ public:
 	}
 
 protected:
-    void paintEvent(QPaintEvent *event) override
+	void recalc()
+	{
+		vector<double> x = {}, fval = {}, fder = {};
+		vector<vector<double>> coeff = {};
+		double curval = this->lowerBound;
+
+		for (int i = 0; i < this->n; ++i)
+		{
+			x.push_back(curval);
+			fval.push_back(this->function(curval, this->mode));
+			fder.push_back(fdd(curval, this->mode));
+			curval += (this->upperBound-this->lowerBound) / double(n-1);
+		}
+
+		if (find_coeff(this->n, x, fval, fder, coeff) != 0)
+			cerr << "Error: Something's wrong with finding coefficients";
+			
+		this->dots = x;
+		this->coeff = coeff;
+	}
+
+	void keyPressEvent(QKeyEvent *event) override {
+        if (event->key() == Qt::Key_0) {
+            this->mode += 1;
+			this->mode %= 7;
+			this->recalc();
+			update();
+		} else if (event->key() == Qt::Key_2) {
+            this->scale *= 2.0; // Increase scale
+			this->lowerBound /= 2.0;
+			this->upperBound /= 2.0;
+			this->recalc();
+            update();
+		} else if (event->key() == Qt::Key_3) {
+            this->scale /= 2.0; // Decrease scale
+			this->lowerBound *= 2.0;
+			this->upperBound *= 2.0;
+			this->recalc();
+            update();
+		} else if (event->key() == Qt::Key_4) {
+			this->n *= 2;
+			this->recalc();
+			update();
+		} else if (event->key() == Qt::Key_5) {
+			this->n = this->n / 2 > 1 ? this->n / 2 : 1;
+			this->recalc();
+			update();
+		} else if (event->key() == Qt::Key_6) {
+			this->p += 1;
+			this->recalc();
+			update();
+		} else if (event->key() == Qt::Key_7) {
+			this->p -= 1;
+			this->recalc();
+			update();
+		}
+
+    }
+    
+	void paintEvent(QPaintEvent *event) override
     {
         Q_UNUSED(event);
 
         QPainter painter(this);
+        painter.fillRect(rect(), Qt::black);
 
         // Find the maximum value of the function in the given range
-        double maxAbsValue = 0.0;
-        for (double x = lowerBound; x <= upperBound; x += 0.1)
-        {
-            double fx = function(x, mode);
-            if (std::abs(fx) > maxAbsValue)
-            {
-                maxAbsValue = std::abs(fx);
-            }
-        }
+        double maxValf = this->function(this->lowerBound, this->mode)
+, minValf = this->function(this->lowerBound, this->mode);
+		double curval = this->lowerBound;
+        for (int i = 0; i < this->n; i++)
+		{
+			if (this->function(curval, this->mode) < minValf)
+				minValf = this->function(curval, this->mode);
+			
+			if (this->function(curval, this->mode) > maxValf)
+				maxValf = this->function(curval, this->mode);
 
-        // Scale the plot to fit within the window
-        double scale = height() / (2.0 * maxAbsValue);
-        double xOffset = width() * 0.1;
-        double yOffset = height() / 2.0;
-/*
-        // Draw the function
-        painter.setRenderHint(QPainter::Antialiasing, true);
-        painter.setPen(Qt::blue);
-        QPainterPath path;
-        for (double x = lowerBound; x <= upperBound; x += 0.01)
-        {
-            double y = function(x, mode);
-            QPointF point(xOffset + scale * x, yOffset - scale * y);
-            if (x == lowerBound)
-            {
-                path.moveTo(point);
-            }
-            else
-            {
-                path.lineTo(point);
-            }
-        }
-        painter.drawPath(path);
-		*/
-		// Draw the function
-        painter.setRenderHint(QPainter::Antialiasing, true);
-        painter.setPen(Qt::blue);
-        QPainterPath path;
-        for (double x = lowerBound; x <= upperBound; x += 0.01)
-        {
-            double y = approx(x, n, dots, coeff, lowerBound, upperBound);
-            QPointF point(xOffset + scale * x, yOffset - scale * y);
-            if (x == lowerBound)
-            {
-                path.moveTo(point);
-            }
-            else
-            {
-                path.lineTo(point);
-            }
-        }
-        painter.drawPath(path);
-        // Output the max absolute value to the console
-        qDebug() << "Maximum absolute value of the function: " << maxAbsValue;
-    }
+			curval += (this->upperBound - this->lowerBound) / double(n-1);
+		}
+        
+		// Scale the plot to fit within the window
+        double xFactor = width() / (this->upperBound - this->lowerBound);
+        double yFactor = height() / (maxValf - minValf);
+
+		// Draw the coordinate axes
+        painter.drawLine(0, height() / 2, width(), height() / 2);
+        painter.drawLine(width() / 2, 0, width() / 2, height());
+    	
+		// Draw the function graphs
+        painter.setPen(Qt::green);
+		QPainterPath pathf, patha;
+        for (int x = 0; x < width(); ++x) {
+            double y = function((x - width() / 2) / xFactor, this->mode);
+        	if (x == 0)
+                pathf.moveTo(x, height() / 2 - y * yFactor);
+            else if (x != width()/2)
+                pathf.lineTo(x, height() / 2 - y * yFactor);
+			else
+                pathf.lineTo(x, height() / 2 - y * yFactor - this->p*maxValf/10.0);
+		}
+		painter.drawPath(pathf);
+		
+		painter.setPen(Qt::blue);
+        for (int x = 0; x < width(); ++x) {
+            double y = approx((x - width() / 2) / xFactor, n, dots, coeff, lowerBound, upperBound);
+        	if (x == 0)
+                patha.moveTo(x, height() / 2 - y * yFactor);
+            else if (x != width()/2)
+                patha.lineTo(x, height() / 2 - y * yFactor);
+			else
+                patha.lineTo(x, height() / 2 - y * yFactor - this->p*maxValf/10.0);
+		}
+		painter.drawPath(patha);
+
+		// Display information about the scale, interval [a, b], f min, and f max
+        painter.setPen(Qt::white);
+        painter.setFont(QFont("Arial", 14));
+        painter.drawText(20, 20, QString("Scale: %1").arg(this->scale));
+        painter.drawText(20, 40, QString("[a, b]: [%1, %2]").arg(this->lowerBound).arg(this->upperBound));
+        painter.drawText(20, 60, QString("f min: %1").arg(minValf));
+        painter.drawText(20, 80, QString("f max: %1").arg(maxValf));
+        painter.drawText(20, 100, QString("k: %1").arg(mode));
+        painter.drawText(20, 120, QString("n: %1").arg(n));
+        painter.drawText(20, 140, QString("p: %1").arg(p));
+	}
 
 private:
     double (*function)(double, int) = nullptr;
+    double (*fdd)(double, int) = nullptr;
     double lowerBound = 0.0;
     double upperBound = 1.0;
+    double scale = 1.0;
 	int mode = 0;
-	int n = 0;
+	int n = 1;
+	int p = 0;
 	double (*approx)(double, int, vector<double>, vector<vector<double>>, double, double) = nullptr;
 	vector<double> dots = {};
 	vector<vector<double>> coeff = {};

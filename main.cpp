@@ -1,9 +1,4 @@
-#include <iostream>
-#include <cmath>
-#include "appr.h"
-#include "graph.h"
-
-using namespace std;
+#include "main.h"
 
 double f(double x, int k)
 {
@@ -96,7 +91,7 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
 
     PlotWidget plotWidget;
-    plotWidget.setFunction(&f, k, a, b); 
+    plotWidget.setFunction(&f, &fdd, k, a, b); 
     plotWidget.setApprox(&calc_approx, n, x, coeff, a, b); 
 
     plotWidget.setWindowTitle("Function Plot");
