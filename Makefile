@@ -55,7 +55,8 @@ OBJECTS_DIR   = ./
 SOURCES       = appr.cpp \
 		main.cpp 
 OBJECTS       = appr.o \
-		main.o
+		main.o \
+		graph.o
 DIST          = /opt/homebrew/share/qt/mkspecs/features/spec_pre.prf \
 		/opt/homebrew/share/qt/mkspecs/features/device_config.prf \
 		/opt/homebrew/Cellar/qt/6.6.2_1/share/qt/mkspecs/common/unix.conf \
