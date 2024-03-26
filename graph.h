@@ -41,8 +41,11 @@ protected:
 
 		for (int i = 0; i < this->n; ++i)
 		{
+			if (i == n/2)
+				fval.push_back(this->function(curval, this->mode)-this->p*this->maxValf/10.0);
+			else
+				fval.push_back(this->function(curval, this->mode));
 			x.push_back(curval);
-			fval.push_back(this->function(curval, this->mode));
 			fder.push_back(fdd(curval, this->mode));
 			curval += (this->upperBound-this->lowerBound) / double(n-1);
 		}
@@ -100,8 +103,8 @@ protected:
         painter.fillRect(rect(), Qt::black);
 
         // Find the maximum value of the function in the given range
-        double maxValf = this->function(this->lowerBound, this->mode)
-, minValf = this->function(this->lowerBound, this->mode);
+        this->maxValf = this->function(this->lowerBound, this->mode);
+		this->minValf = this->function(this->lowerBound, this->mode);
 		double curval = this->lowerBound;
         for (int i = 0; i < this->n; i++)
 		{
@@ -129,10 +132,8 @@ protected:
             double y = function((x - width() / 2) / xFactor, this->mode);
         	if (x == 0)
                 pathf.moveTo(x, height() / 2 - y * yFactor);
-            else if (x != width()/2)
+            else 
                 pathf.lineTo(x, height() / 2 - y * yFactor);
-			else
-                pathf.lineTo(x, height() / 2 - y * yFactor - this->p*maxValf/10.0);
 		}
 		painter.drawPath(pathf);
 		
@@ -141,10 +142,8 @@ protected:
             double y = approx((x - width() / 2) / xFactor, n, dots, coeff, lowerBound, upperBound);
         	if (x == 0)
                 patha.moveTo(x, height() / 2 - y * yFactor);
-            else if (x != width()/2)
+            else 
                 patha.lineTo(x, height() / 2 - y * yFactor);
-			else
-                patha.lineTo(x, height() / 2 - y * yFactor - this->p*maxValf/10.0);
 		}
 		painter.drawPath(patha);
 
@@ -172,4 +171,6 @@ private:
 	double (*approx)(double, int, vector<double>, vector<vector<double>>, double, double) = nullptr;
 	vector<double> dots = {};
 	vector<vector<double>> coeff = {};
+	double maxValf = 0;
+	double minValf = 0;
 };

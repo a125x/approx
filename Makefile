@@ -55,8 +55,7 @@ OBJECTS_DIR   = ./
 SOURCES       = appr.cpp \
 		main.cpp 
 OBJECTS       = appr.o \
-		main.o \
-		graph.o
+		main.o
 DIST          = /opt/homebrew/share/qt/mkspecs/features/spec_pre.prf \
 		/opt/homebrew/share/qt/mkspecs/features/device_config.prf \
 		/opt/homebrew/Cellar/qt/6.6.2_1/share/qt/mkspecs/common/unix.conf \
@@ -370,7 +369,8 @@ DIST          = /opt/homebrew/share/qt/mkspecs/features/spec_pre.prf \
 		/opt/homebrew/share/qt/mkspecs/features/yacc.prf \
 		/opt/homebrew/share/qt/mkspecs/features/lex.prf \
 		approx.pro appr.h \
-		graph.h appr.cpp \
+		graph.h \
+		main.h appr.cpp \
 		main.cpp
 QMAKE_TARGET  = approx
 DESTDIR       = 
@@ -1054,7 +1054,7 @@ distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
 	$(COPY_FILE) --parents /opt/homebrew/share/qt/mkspecs/features/data/dummy.cpp $(DISTDIR)/
-	$(COPY_FILE) --parents appr.h graph.h $(DISTDIR)/
+	$(COPY_FILE) --parents appr.h graph.h main.h $(DISTDIR)/
 	$(COPY_FILE) --parents appr.cpp main.cpp $(DISTDIR)/
 
 
@@ -1110,11 +1110,14 @@ compiler_clean: compiler_moc_predefs_clean
 
 ####### Compile
 
-appr.o: appr.cpp 
+appr.o: appr.cpp appr.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o appr.o appr.cpp
 
-main.o: main.cpp appr.h \
+main.o: main.cpp main.h \
+		appr.h \
 		graph.h \
+		/opt/homebrew/lib/QtWidgets.framework/Headers/QApplication \
+		/opt/homebrew/lib/QtWidgets.framework/Headers/qapplication.h \
 		/opt/homebrew/lib/QtWidgets.framework/Headers/QtWidgets \
 		/opt/homebrew/lib/QtWidgets.framework/Headers/qtwidgetsglobal.h \
 		/opt/homebrew/lib/QtWidgets.framework/Headers/qabstractbutton.h \
@@ -1126,7 +1129,6 @@ main.o: main.cpp appr.h \
 		/opt/homebrew/lib/QtWidgets.framework/Headers/qaccessiblewidget.h \
 		/opt/homebrew/lib/QtWidgets.framework/Headers/qaction.h \
 		/opt/homebrew/lib/QtWidgets.framework/Headers/qactiongroup.h \
-		/opt/homebrew/lib/QtWidgets.framework/Headers/qapplication.h \
 		/opt/homebrew/lib/QtWidgets.framework/Headers/qboxlayout.h \
 		/opt/homebrew/lib/QtWidgets.framework/Headers/qbuttongroup.h \
 		/opt/homebrew/lib/QtWidgets.framework/Headers/qcalendarwidget.h \
@@ -1236,7 +1238,15 @@ main.o: main.cpp appr.h \
 		/opt/homebrew/lib/QtWidgets.framework/Headers/qwhatsthis.h \
 		/opt/homebrew/lib/QtWidgets.framework/Headers/qwidget.h \
 		/opt/homebrew/lib/QtWidgets.framework/Headers/qwidgetaction.h \
-		/opt/homebrew/lib/QtWidgets.framework/Headers/qwizard.h
+		/opt/homebrew/lib/QtWidgets.framework/Headers/qwizard.h \
+		/opt/homebrew/lib/QtGui.framework/Headers/QPainter \
+		/opt/homebrew/lib/QtGui.framework/Headers/qpainter.h \
+		/opt/homebrew/lib/QtCore.framework/Headers/QRect \
+		/opt/homebrew/lib/QtCore.framework/Headers/qrect.h \
+		/opt/homebrew/lib/QtGui.framework/Headers/QColor \
+		/opt/homebrew/lib/QtGui.framework/Headers/qcolor.h \
+		/opt/homebrew/lib/QtGui.framework/Headers/QFont \
+		/opt/homebrew/lib/QtGui.framework/Headers/qfont.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o main.o main.cpp
 
 ####### Install
