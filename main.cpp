@@ -1,4 +1,5 @@
 #include "main.h"
+#define delta 0.00000001
 
 double f(double x, int k)
 {
@@ -21,9 +22,15 @@ double f(double x, int k)
 	}
 }
 
+double fd(double x, int k)
+{
+	return 0.5 * (f(x+delta, k) - f(x-delta, k)) / delta;
+}
+
 double fdd(double x, int k)
 {
-    switch (k)
+	return 0.5 * (fd(x+delta, k) - fd(x-delta, k)) / delta;
+    /*switch (k)
 	{
 		case 0:
 			return 0;
@@ -39,7 +46,7 @@ double fdd(double x, int k)
 			return exp(x);
 		case 6:
 			return (5000*pow(x, 2)/pow(25*pow(x, 2)+1, 3)) - (50/pow(25*pow(x, 2)+1, 2));
-	}
+	}*/
 }
 
 int main(int argc, char *argv[])
