@@ -30,23 +30,6 @@ double fd(double x, int k)
 double fdd(double x, int k)
 {
 	return 0.5 * (fd(x+delta, k) - fd(x-delta, k)) / delta;
-    /*switch (k)
-	{
-		case 0:
-			return 0;
-		case 1:
-			return 0;
-		case 2:
-			return 2;
-		case 3:
-			return 6*x;
-		case 4:
-			return 12*pow(x, 2);
-		case 5:
-			return exp(x);
-		case 6:
-			return (5000*pow(x, 2)/pow(25*pow(x, 2)+1, 3)) - (50/pow(25*pow(x, 2)+1, 2));
-	}*/
 }
 
 int main(int argc, char *argv[])
@@ -80,26 +63,10 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-	vector<double> x = {}, fval = {}, fder = {};
-	vector<vector<double>> coeff = {};
-	double curval = a;
-
-	for (int i = 0; i < n; ++i)
-	{
-		x.push_back(curval);
-		fval.push_back(f(curval, k));
-		fder.push_back(fdd(curval, k));
-		curval += (b-a) / double(n-1);
-	}
-
-	if (find_coeff(n, x, fval, fder, coeff) != 0)
-		cerr << "Error: Something's wrong with finding coefficients";
-
-    QApplication app(argc, argv);
+	QApplication app(argc, argv);
 
     PlotWidget plotWidget;
-    plotWidget.setFunction(&f, &fdd, k, a, b); 
-    plotWidget.setApprox(&calc_approx, n, x, coeff, a, b); 
+    plotWidget.setFunction(&f, &fd, &fdd, &calc_approx, k, a, b, n); 
 
     plotWidget.setWindowTitle("Function Plot");
     plotWidget.resize(800, 600);
