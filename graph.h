@@ -186,6 +186,27 @@ protected:
 			}
 			case 3:
 			{
+				painter.setPen(Qt::blue);
+        		for (int x = 0; x < width(); ++x) 
+				{
+            		double y =  function((x - width() / 2) / xFactor, this->mode) - approx((x - width() / 2) / xFactor, n, dots, coeff, lowerBound, upperBound, false);
+        			if (x == 0)
+                		patha.moveTo(x, height() / 2 - y * yFactor);
+        	    	else 
+            		    patha.lineTo(x, height() / 2 - y * yFactor);
+				}
+				painter.drawPath(patha);
+
+				painter.setPen(Qt::yellow);
+        		for (int x = 0; x < width(); ++x) 
+				{
+            		double y =  function((x - width() / 2) / xFactor, this->mode) - approx((x - width() / 2) / xFactor, n, dots, coeff_akima, lowerBound, upperBound, true);
+        			if (x == 0)
+                		pathb.moveTo(x, height() / 2 - y * yFactor);
+        	    	else 
+            		    pathb.lineTo(x, height() / 2 - y * yFactor);
+				}
+				painter.drawPath(pathb);
 				break;
 			}
 			default:
