@@ -30,16 +30,26 @@ protected:
 		vector<double> x = {}, fval = {}, fd = {}, fder = {};
 		vector<vector<double>> coeff = {}, coeff_akima = {};
 		double curval = this->lowerBound;
+		double temp = this->maxValf;
+		this->minValf = 1000000000000;
+		this->maxValf = -1000000000000;
 
 		for (int i = 0; i < this->n; ++i)
 		{
 			if (i == n/2)
-				fval.push_back(this->function(curval, this->mode)-this->p*this->maxValf/10.0);
+				fval.push_back(this->function(curval, this->mode)-this->p*temp/10.0);
 			else
 				fval.push_back(this->function(curval, this->mode));
 			x.push_back(curval);
 			fd.push_back(this->fd(curval, this->mode));
 			fder.push_back(fdd(curval, this->mode));
+
+			if (this->function(curval, this->mode) < this->minValf)
+				this->minValf = this->function(curval, this->mode);
+			
+			if (this->function(curval, this->mode) > this->maxValf)
+				this->maxValf = this->function(curval, this->mode);
+
 			curval += (this->upperBound-this->lowerBound) / double(n-1);
 		}
 
@@ -85,7 +95,7 @@ protected:
 		}
 
     }
-    
+
 	void paintEvent(QPaintEvent *event) override
     {
 		this->recalc();
@@ -93,25 +103,10 @@ protected:
 
         QPainter painter(this);
         painter.fillRect(rect(), Qt::black);
-
-        // Find the maximum value of the function in the given range
-        this->maxValf = this->function(this->lowerBound, this->mode);
-		this->minValf = this->function(this->lowerBound, this->mode);
-		double curval = this->lowerBound;
-        for (int i = 0; i < this->n; i++)
-		{
-			if (this->function(curval, this->mode) < minValf)
-				minValf = this->function(curval, this->mode);
-			
-			if (this->function(curval, this->mode) > maxValf)
-				maxValf = this->function(curval, this->mode);
-
-			curval += (this->upperBound - this->lowerBound) / double(n-1);
-		}
         
 		// Scale the plot to fit within the window
         double xFactor = width() / (this->upperBound - this->lowerBound);
-        double yFactor = height() / (maxValf - minValf);
+        double yFactor = height() / (this->maxValf - this->minValf);
 
 		// Draw the coordinate axes
         painter.drawLine(0, height() / 2, width(), height() / 2);
@@ -120,12 +115,17 @@ protected:
 		// Draw the function graphs
         painter.setPen(Qt::green);
 		QPainterPath pathf, patha, pathb;
-        for (int x = 0; x < width(); ++x) {
-            double y = function((x - width() / 2) / xFactor, this->mode);
-        	if (x == 0)
-                pathf.moveTo(x, height() / 2 - y * yFactor);
+        for (double x = this->lowerBound; x <= this->upperBound; x += 1.0/xFactor) 
+		{
+            double y = function(x, this->mode);
+        	if (x == this->lowerBound)
+			{
+                pathf.moveTo((x-this->lowerBound) * xFactor, height()/2 - y * yFactor);
+			}
             else 
-                pathf.lineTo(x, height() / 2 - y * yFactor);
+			{
+                pathf.lineTo((x-this->lowerBound) * xFactor, height()/2 - y * yFactor);
+			}
 		}
 		painter.drawPath(pathf);
 		
@@ -134,13 +134,17 @@ protected:
 			case 0:
 			{
 				painter.setPen(Qt::blue);
-        		for (int x = 0; x < width(); ++x) 
+        		for (double x = this->lowerBound; x <= this->upperBound; x += 1.0/xFactor) 
 				{
-            		double y = approx((x - width() / 2) / xFactor, n, dots, coeff, lowerBound, upperBound, false);
-        			if (x == 0)
-                		patha.moveTo(x, height() / 2 - y * yFactor);
-        	    	else 
-            		    patha.lineTo(x, height() / 2 - y * yFactor);
+            		double y = approx(x, n, dots, coeff, lowerBound, upperBound, false);
+        			if (x == this->lowerBound)
+					{
+            		    patha.moveTo((x-this->lowerBound) * xFactor, height()/2 - y * yFactor);
+					}
+            		else 
+					{
+            		    patha.lineTo((x-this->lowerBound) * xFactor, height()/2 - y * yFactor);
+					}
 				}
 				painter.drawPath(patha);
 				break;
@@ -148,13 +152,17 @@ protected:
 			case 1:
 			{
 				painter.setPen(Qt::yellow);
-        		for (int x = 0; x < width(); ++x) 
+        		for (double x = this->lowerBound; x <= this->upperBound; x += 1.0/xFactor) 
 				{
-            		double y = approx((x - width() / 2) / xFactor, n, dots, coeff_akima, lowerBound, upperBound, true);
-        			if (x == 0)
-                		patha.moveTo(x, height() / 2 - y * yFactor);
-        	    	else 
-            		    patha.lineTo(x, height() / 2 - y * yFactor);
+            		double y = approx(x, n, dots, coeff_akima, lowerBound, upperBound, true);
+        			if (x == this->lowerBound)
+					{
+            		    patha.moveTo((x-this->lowerBound) * xFactor, height()/2 - y * yFactor);
+					}
+            		else 
+					{
+            		    patha.lineTo((x-this->lowerBound) * xFactor, height()/2 - y * yFactor);
+					}
 				}
 				painter.drawPath(patha);
 				break;
@@ -162,24 +170,32 @@ protected:
 			case 2:
 			{
 				painter.setPen(Qt::blue);
-        		for (int x = 0; x < width(); ++x) 
+        		for (double x = this->lowerBound; x <= this->upperBound; x += 1.0/xFactor) 
 				{
-            		double y = approx((x - width() / 2) / xFactor, n, dots, coeff, lowerBound, upperBound, false);
-        			if (x == 0)
-                		patha.moveTo(x, height() / 2 - y * yFactor);
-        	    	else 
-            		    patha.lineTo(x, height() / 2 - y * yFactor);
+            		double y = approx(x, n, dots, coeff, lowerBound, upperBound, false);
+        			if (x == this->lowerBound)
+					{
+            		    patha.moveTo((x-this->lowerBound) * xFactor, height()/2 - y * yFactor);
+					}
+            		else 
+					{
+            		    patha.lineTo((x-this->lowerBound) * xFactor, height()/2 - y * yFactor);
+					}
 				}
 				painter.drawPath(patha);
 
 				painter.setPen(Qt::yellow);
-        		for (int x = 0; x < width(); ++x) 
+        		for (double x = this->lowerBound; x <= this->upperBound; x += 1.0/xFactor) 
 				{
-            		double y = approx((x - width() / 2) / xFactor, n, dots, coeff_akima, lowerBound, upperBound, true);
-        			if (x == 0)
-                		pathb.moveTo(x, height() / 2 - y * yFactor);
-        	    	else 
-            		    pathb.lineTo(x, height() / 2 - y * yFactor);
+            		double y = approx(x, n, dots, coeff_akima, lowerBound, upperBound, true);
+        			if (x == this->lowerBound)
+					{
+            		    pathb.moveTo((x-this->lowerBound) * xFactor, height()/2 - y * yFactor);
+					}
+            		else 
+					{
+            		    pathb.lineTo((x-this->lowerBound) * xFactor, height()/2 - y * yFactor);
+					}
 				}
 				painter.drawPath(pathb);
 				break;
@@ -187,24 +203,32 @@ protected:
 			case 3:
 			{
 				painter.setPen(Qt::blue);
-        		for (int x = 0; x < width(); ++x) 
+        		for (double x = this->lowerBound; x <= this->upperBound; x += 1.0/xFactor) 
 				{
-            		double y =  function((x - width() / 2) / xFactor, this->mode) - approx((x - width() / 2) / xFactor, n, dots, coeff, lowerBound, upperBound, false);
-        			if (x == 0)
-                		patha.moveTo(x, height() / 2 - y * yFactor);
-        	    	else 
-            		    patha.lineTo(x, height() / 2 - y * yFactor);
+            		double y =  function(x, this->mode) - approx(x, n, dots, coeff, lowerBound, upperBound, false);
+        			if (x == this->lowerBound)
+					{
+            		    patha.moveTo((x-this->lowerBound) * xFactor, height()/2 - y * yFactor);
+					}
+            		else 
+					{
+            		    patha.lineTo((x-this->lowerBound) * xFactor, height()/2 - y * yFactor);
+					}
 				}
 				painter.drawPath(patha);
 
 				painter.setPen(Qt::yellow);
-        		for (int x = 0; x < width(); ++x) 
+        		for (double x = this->lowerBound; x <= this->upperBound; x += 1.0/xFactor) 
 				{
-            		double y =  function((x - width() / 2) / xFactor, this->mode) - approx((x - width() / 2) / xFactor, n, dots, coeff_akima, lowerBound, upperBound, true);
-        			if (x == 0)
-                		pathb.moveTo(x, height() / 2 - y * yFactor);
-        	    	else 
-            		    pathb.lineTo(x, height() / 2 - y * yFactor);
+            		double y =  function(x, this->mode) - approx(x, n, dots, coeff_akima, lowerBound, upperBound, true);
+        			if (x == this->lowerBound)
+					{
+            		    pathb.moveTo((x-this->lowerBound) * xFactor, height()/2 - y * yFactor);
+					}
+            		else 
+					{
+            		    pathb.lineTo((x-this->lowerBound) * xFactor, height()/2 - y * yFactor);
+					}
 				}
 				painter.drawPath(pathb);
 				break;
